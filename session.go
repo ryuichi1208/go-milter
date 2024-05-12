@@ -190,9 +190,11 @@ func (m *milterSession) Process(ctx context.Context, msg *Message) (Response, er
 		headerData := decodeCStrings(msg.Data)
 		// headers with an empty body appear as `text\x00\x00`, decodeCStrings will drop the empty body
 		if len(headerData) == 1 {
+			log.Println("Empty header body")
 			headerData = append(headerData, "")
 		}
 		if len(headerData) == 2 {
+			log.Println("Header data", headerData[0], headerData[1])
 			m.headers.Add(headerData[0], headerData[1])
 			// call and return milter handler
 			return m.backend.Header(ctx, headerData[0], headerData[1], newModifier(m))
