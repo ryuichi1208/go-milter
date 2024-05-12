@@ -181,6 +181,7 @@ func (m *milterSession) Process(ctx context.Context, msg *Message) (Response, er
 		return m.backend.Helo(ctx, name, newModifier(m))
 
 	case CodeHeader:
+		log.Printf("Header: %s", msg.Data)
 		// make sure headers is initialized
 		if m.headers == nil {
 			m.headers = make(textproto.MIMEHeader)
@@ -203,6 +204,7 @@ func (m *milterSession) Process(ctx context.Context, msg *Message) (Response, er
 		return m.backend.MailFrom(ctx, strings.Trim(from, "<>"), newModifier(m))
 
 	case CodeEOH:
+		log.Println("End of headers")
 		// end of headers
 		return m.backend.Headers(ctx, m.headers, newModifier(m))
 
