@@ -1,0 +1,10 @@
+run:
+  skip-dirs:
+    - cmd
+
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - nilerr
+    - nilnil
