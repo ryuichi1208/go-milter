@@ -1,10 +1,29 @@
-run:
-  skip-dirs:
+issues:
+  exclude-dirs:
     - cmd
+  exclude-files:
+    - client_test.go
 
 linters:
   disable-all: true
   enable:
     - asasalint
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - execinquery
+    - exportloopref
     - nilerr
     - nilnil

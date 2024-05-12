@@ -32,10 +32,16 @@ func (c *milterSession) ReadPacket() (*Message, error) {
 	return readPacket(c.conn, 0)
 }
 
-func readPacket(conn net.Conn, timeout time.Duration) (*Message, error) {
+func readPacket(conn net.Conn, timeout time.Duration) (msg *Message, err error) {
 	if timeout != 0 {
-		conn.SetReadDeadline(time.Now().Add(timeout))
-		defer conn.SetReadDeadline(time.Time{})
+		err = conn.SetReadDeadline(time.Now().Add(timeout))
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			err = conn.SetReadDeadline(time.Time{})
+		}()
+
 	}
 
 	// read packet length
@@ -98,6 +104,8 @@ func writePacket(conn net.Conn, msg *Message, timeout time.Duration) error {
 
 // Process processes incoming milter commands
 func (m *milterSession) Process(ctx context.Context, msg *Message) (Response, error) {
+	var err error
+
 	switch Code(msg.Code) {
 	case CodeAbort:
 		// abort current message and start over
@@ -161,7 +169,7 @@ func (m *milterSession) Process(ctx context.Context, msg *Message) (Response, er
 			}
 		}
 		// do not send response
-		return nil, nil
+		return nil, err
 
 	case CodeEOB:
 		// call and return milter handler
