@@ -67,12 +67,16 @@ func main() {
 	disabledMsgs := flag.Uint("disabled-msgs", 0, "Bitmask of disabled protocol messages")
 	flag.Parse()
 
-	c := milter.NewClientWithOptions(*transport, *address, milter.ClientOptions{
-		ActionMask:   milter.OptAction(*actionMask),
-		ProtocolMask: milter.OptProtocol(*disabledMsgs),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	})
+	c := milter.NewClientWithOptions(
+		*transport,
+		*address,
+		milter.ClientOptions{
+			ActionMask:   milter.OptAction(*actionMask),
+			ProtocolMask: milter.OptProtocol(*disabledMsgs),
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+		},
+	)
 	defer c.Close()
 
 	s, err := c.Session()
