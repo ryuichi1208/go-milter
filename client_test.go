@@ -2,6 +2,7 @@ package milter
 
 import (
 	"bytes"
+	"context"
 	"net"
 	nettextproto "net/textproto"
 	"reflect"
@@ -60,7 +61,7 @@ type MockMilter struct {
 	Chunks [][]byte
 }
 
-func (mm *MockMilter) Connect(host string, family string, port uint16, addr net.IP, m *Modifier) (Response, error) {
+func (mm *MockMilter) Connect(ctx context.Context, host string, family string, port uint16, addr net.IP, m *Modifier) (Response, error) {
 	if mm.ConnMod != nil {
 		mm.ConnMod(m)
 	}
@@ -71,7 +72,7 @@ func (mm *MockMilter) Connect(host string, family string, port uint16, addr net.
 	return mm.ConnResp, mm.ConnErr
 }
 
-func (mm *MockMilter) Helo(name string, m *Modifier) (Response, error) {
+func (mm *MockMilter) Helo(ctx context.Context, name string, m *Modifier) (Response, error) {
 	if mm.HeloMod != nil {
 		mm.HeloMod(m)
 	}
@@ -79,7 +80,7 @@ func (mm *MockMilter) Helo(name string, m *Modifier) (Response, error) {
 	return mm.HeloResp, mm.HeloErr
 }
 
-func (mm *MockMilter) MailFrom(from string, m *Modifier) (Response, error) {
+func (mm *MockMilter) MailFrom(ctx context.Context, from string, m *Modifier) (Response, error) {
 	if mm.MailMod != nil {
 		mm.MailMod(m)
 	}
@@ -87,7 +88,7 @@ func (mm *MockMilter) MailFrom(from string, m *Modifier) (Response, error) {
 	return mm.MailResp, mm.MailErr
 }
 
-func (mm *MockMilter) RcptTo(rcptTo string, m *Modifier) (Response, error) {
+func (mm *MockMilter) RcptTo(ctx context.Context, rcptTo string, m *Modifier) (Response, error) {
 	if mm.RcptMod != nil {
 		mm.RcptMod(m)
 	}
@@ -95,14 +96,14 @@ func (mm *MockMilter) RcptTo(rcptTo string, m *Modifier) (Response, error) {
 	return mm.RcptResp, mm.RcptErr
 }
 
-func (mm *MockMilter) Header(name string, value string, m *Modifier) (Response, error) {
+func (mm *MockMilter) Header(ctx context.Context, name string, value string, m *Modifier) (Response, error) {
 	if mm.HdrMod != nil {
 		mm.HdrMod(m)
 	}
 	return mm.HdrResp, mm.HdrErr
 }
 
-func (mm *MockMilter) Headers(h nettextproto.MIMEHeader, m *Modifier) (Response, error) {
+func (mm *MockMilter) Headers(ctx context.Context, h nettextproto.MIMEHeader, m *Modifier) (Response, error) {
 	if mm.HdrsMod != nil {
 		mm.HdrsMod(m)
 	}
@@ -110,7 +111,7 @@ func (mm *MockMilter) Headers(h nettextproto.MIMEHeader, m *Modifier) (Response,
 	return mm.HdrsResp, mm.HdrsErr
 }
 
-func (mm *MockMilter) BodyChunk(chunk []byte, m *Modifier) (Response, error) {
+func (mm *MockMilter) BodyChunk(ctx context.Context, chunk []byte, m *Modifier) (Response, error) {
 	if mm.BodyChunkMod != nil {
 		mm.BodyChunkMod(m)
 	}
@@ -118,14 +119,14 @@ func (mm *MockMilter) BodyChunk(chunk []byte, m *Modifier) (Response, error) {
 	return mm.BodyChunkResp, mm.BodyChunkErr
 }
 
-func (mm *MockMilter) Body(m *Modifier) (Response, error) {
+func (mm *MockMilter) Body(ctx context.Context, m *Modifier) (Response, error) {
 	if mm.BodyMod != nil {
 		mm.BodyMod(m)
 	}
 	return mm.BodyResp, mm.BodyErr
 }
 
-func (mm *MockMilter) Abort(m *Modifier) error {
+func (mm *MockMilter) Abort(ctx context.Context, m *Modifier) error {
 	if mm.AbortMod != nil {
 		mm.AbortMod(m)
 	}

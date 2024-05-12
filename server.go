@@ -1,6 +1,7 @@
 package milter
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/textproto"
@@ -20,40 +21,40 @@ var ErrServerClosed = errors.New("milter: server closed")
 type Milter interface {
 	// Connect is called to provide SMTP connection data for incoming message.
 	// Suppress with OptNoConnect.
-	Connect(host string, family string, port uint16, addr net.IP, m *Modifier) (Response, error)
+	Connect(ctx context.Context, host string, family string, port uint16, addr net.IP, m *Modifier) (Response, error)
 
 	// Helo is called to process any HELO/EHLO related filters. Suppress with
 	// OptNoHelo.
-	Helo(name string, m *Modifier) (Response, error)
+	Helo(ctx context.Context, name string, m *Modifier) (Response, error)
 
 	// MailFrom is called to process filters on envelope FROM address. Suppress
 	// with OptNoMailFrom.
-	MailFrom(from string, m *Modifier) (Response, error)
+	MailFrom(ctx context.Context, from string, m *Modifier) (Response, error)
 
 	// RcptTo is called to process filters on envelope TO address. Suppress with
 	// OptNoRcptTo.
-	RcptTo(rcptTo string, m *Modifier) (Response, error)
+	RcptTo(ctx context.Context, rcptTo string, m *Modifier) (Response, error)
 
 	// Header is called once for each header in incoming message. Suppress with
 	// OptNoHeaders.
-	Header(name string, value string, m *Modifier) (Response, error)
+	Header(ctx context.Context, name string, value string, m *Modifier) (Response, error)
 
 	// Headers is called when all message headers have been processed. Suppress
 	// with OptNoEOH.
-	Headers(h textproto.MIMEHeader, m *Modifier) (Response, error)
+	Headers(ctx context.Context, h textproto.MIMEHeader, m *Modifier) (Response, error)
 
 	// BodyChunk is called to process next message body chunk data (up to 64KB
 	// in size). Suppress with OptNoBody.
-	BodyChunk(chunk []byte, m *Modifier) (Response, error)
+	BodyChunk(ctx context.Context, chunk []byte, m *Modifier) (Response, error)
 
 	// Body is called at the end of each message. All changes to message's
 	// content & attributes must be done here.
-	Body(m *Modifier) (Response, error)
+	Body(ctx context.Context, m *Modifier) (Response, error)
 
 	// Abort is called is the current message has been aborted. All message data
 	// should be reset to prior to the Helo callback. Connection data should be
 	// preserved.
-	Abort(m *Modifier) error
+	Abort(ctx context.Context, m *Modifier) error
 }
 
 // NoOpMilter is a dummy Milter implementation that does nothing.
@@ -61,39 +62,39 @@ type NoOpMilter struct{}
 
 var _ Milter = NoOpMilter{}
 
-func (NoOpMilter) Connect(host string, family string, port uint16, addr net.IP, m *Modifier) (Response, error) {
+func (NoOpMilter) Connect(ctx context.Context, host string, family string, port uint16, addr net.IP, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) Helo(name string, m *Modifier) (Response, error) {
+func (NoOpMilter) Helo(ctx context.Context, name string, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) MailFrom(from string, m *Modifier) (Response, error) {
+func (NoOpMilter) MailFrom(ctx context.Context, from string, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) RcptTo(rcptTo string, m *Modifier) (Response, error) {
+func (NoOpMilter) RcptTo(ctx context.Context, rcptTo string, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) Header(name string, value string, m *Modifier) (Response, error) {
+func (NoOpMilter) Header(ctx context.Context, name string, value string, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) Headers(h textproto.MIMEHeader, m *Modifier) (Response, error) {
+func (NoOpMilter) Headers(ctx context.Context, h textproto.MIMEHeader, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) BodyChunk(chunk []byte, m *Modifier) (Response, error) {
+func (NoOpMilter) BodyChunk(ctx context.Context, chunk []byte, m *Modifier) (Response, error) {
 	return RespContinue, nil
 }
 
-func (NoOpMilter) Body(m *Modifier) (Response, error) {
+func (NoOpMilter) Body(ctx context.Context, m *Modifier) (Response, error) {
 	return RespAccept, nil
 }
 
-func (NoOpMilter) Abort(m *Modifier) error {
+func (NoOpMilter) Abort(ctx context.Context, m *Modifier) error {
 	return nil
 }
 

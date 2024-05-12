@@ -3,6 +3,7 @@ package milter
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -96,7 +97,7 @@ func writePacket(conn net.Conn, msg *Message, timeout time.Duration) error {
 }
 
 // Process processes incoming milter commands
-func (m *milterSession) Process(msg *Message) (Response, error) {
+func (m *milterSession) Process(ctx context.Context, msg *Message) (Response, error) {
 	switch Code(msg.Code) {
 	case CodeAbort:
 		// abort current message and start over
@@ -104,11 +105,11 @@ func (m *milterSession) Process(msg *Message) (Response, error) {
 			m.headers = nil
 			m.macros = nil
 		}()
-		return nil, m.backend.Abort(newModifier(m))
+		return nil, m.backend.Abort(ctx, newModifier(m))
 
 	case CodeBody:
 		// body chunk
-		return m.backend.BodyChunk(msg.Data, newModifier(m))
+		return m.backend.BodyChunk(ctx, msg.Data, newModifier(m))
 
 	case CodeConn:
 		// new connection, get hostname
@@ -137,6 +138,7 @@ func (m *milterSession) Process(msg *Message) (Response, error) {
 		}
 		// run handler and return
 		return m.backend.Connect(
+			ctx,
 			hostname,
 			family[protocolFamily],
 			port,
@@ -163,12 +165,12 @@ func (m *milterSession) Process(msg *Message) (Response, error) {
 
 	case CodeEOB:
 		// call and return milter handler
-		return m.backend.Body(newModifier(m))
+		return m.backend.Body(ctx, newModifier(m))
 
 	case CodeHelo:
 		// helo command
 		name := strings.TrimSuffix(string(msg.Data), null)
-		return m.backend.Helo(name, newModifier(m))
+		return m.backend.Helo(ctx, name, newModifier(m))
 
 	case CodeHeader:
 		// make sure headers is initialized
@@ -184,17 +186,17 @@ func (m *milterSession) Process(msg *Message) (Response, error) {
 		if len(headerData) == 2 {
 			m.headers.Add(headerData[0], headerData[1])
 			// call and return milter handler
-			return m.backend.Header(headerData[0], headerData[1], newModifier(m))
+			return m.backend.Header(ctx, headerData[0], headerData[1], newModifier(m))
 		}
 
 	case CodeMail:
 		// envelope from address
 		from := readCString(msg.Data)
-		return m.backend.MailFrom(strings.Trim(from, "<>"), newModifier(m))
+		return m.backend.MailFrom(ctx, strings.Trim(from, "<>"), newModifier(m))
 
 	case CodeEOH:
 		// end of headers
-		return m.backend.Headers(m.headers, newModifier(m))
+		return m.backend.Headers(ctx, m.headers, newModifier(m))
 
 	case CodeOptNeg:
 		// ignore request and prepare response buffer
@@ -215,7 +217,7 @@ func (m *milterSession) Process(msg *Message) (Response, error) {
 	case CodeRcpt:
 		// envelope to address
 		to := readCString(msg.Data)
-		return m.backend.RcptTo(strings.Trim(to, "<>"), newModifier(m))
+		return m.backend.RcptTo(ctx, strings.Trim(to, "<>"), newModifier(m))
 
 	case CodeData:
 		// data, ignore
@@ -232,6 +234,7 @@ func (m *milterSession) Process(msg *Message) (Response, error) {
 
 // HandleMilterComands processes all milter commands in the same connection
 func (m *milterSession) HandleMilterCommands() {
+	ctx := context.Background()
 	defer m.conn.Close()
 
 	for {
@@ -243,7 +246,7 @@ func (m *milterSession) HandleMilterCommands() {
 			return
 		}
 
-		resp, err := m.Process(msg)
+		resp, err := m.Process(ctx, msg)
 		if err != nil {
 			if err != errCloseSession {
 				// log error condition
